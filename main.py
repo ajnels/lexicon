@@ -29,9 +29,7 @@ def welcome_prompt():
 
 
 def add_word(word=None):
-    if language == '':
-        print('Please define a language first')
-        change_language()
+    check_language()
 
     if word is None:
         word = input('Word: ')
@@ -52,6 +50,8 @@ def add_word(word=None):
 
 
 def generate_word():
+    check_language()
+
     word = ""
     random = Random()
     number_syllables = random.randint(1, 4)
@@ -83,7 +83,18 @@ def generate_word():
 def change_language():
     global language
     language = input("Enter Language to work on:\n")
-    phonology.change_language(language)
+    try:
+        phonology.change_language(language)
+    except Exception as e:
+        print(f"Uh-oh something went wrong {e}")
+        print(f"Try selecting a predefined language")
+        change_language()
+
+
+def check_language():
+    if not language:
+        print('Please define a language')
+        change_language()
 
 
 if __name__ == '__main__':
