@@ -1,11 +1,9 @@
 import csv
 import os
-import re
-from random import Random
-from phonology import Phonology
+import importlib
+from WordGenerator import WordGenerator
 
-language = ''
-phonology = Phonology()
+word_generator = WordGenerator()
 
 
 def welcome_prompt():
@@ -37,13 +35,11 @@ def add_word(word=None):
     part_of_speech = input('Part of Speech: ')
     definition = input('Definition: ')
 
-    if not os.path.exists('languages') or not os.path.isdir('languages'):
-        os.mkdir('languages')
+    language_path = f"language_data/{word_generator.language}"
+    if not os.path.exists(language_path) or not os.path.isdir(language_path):
+        os.mkdir(language_path)
 
-    if not os.path.exists(language) or not os.path.isdir(language):
-        os.mkdir(language)
-
-    with open(f"languages/{language}/{language}_lexicon.csv", 'a', newline='') as csv_file:
+    with open(f"{language_path}/{word_generator.language}_lexicon.csv", 'a', newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerow([word, part_of_speech, definition])
     csv_file.close()
@@ -52,27 +48,9 @@ def add_word(word=None):
 def generate_word():
     check_language()
 
-    word = ""
-    random = Random()
-    number_syllables = random.randint(1, 4)
-    for i in range(number_syllables):
-        selected_onset = phonology.onset[random.randint(0, len(phonology.onset) - 1)]
-        selected_nucleus = phonology.nucleus[random.randint(0, len(phonology.nucleus) - 1)]
-
-        word += selected_onset + selected_nucleus
-
-    if random.randint(0, 100) < 50:
-        selected_coda = phonology.coda[random.randint(0, len(phonology.coda) - 1)]
-        word += selected_coda
-
-    forbidden_clusters = ['(c)rh']
-    for cluster in forbidden_clusters:
-        if '(c)' in cluster:
-            cluster = cluster.replace('(c)', '')
-            regex = f"{cluster}|".join(phonology.constants) + f"{cluster}"
-            word = re.sub(regex, cluster, word)
-
+    word = word_generator.generate_word()
     print(f"\nWord Generated was: {word}\n")
+
     user_input = input('Add Word? (Y/N)\n')
     if user_input.lower() == 'g' or user_input.lower() == 'y':
         add_word(word)
@@ -81,18 +59,20 @@ def generate_word():
 
 
 def change_language():
-    global language
     language = input("Enter Language to work on:\n")
     try:
-        phonology.change_language(language)
+        global word_generator
+        module = importlib.import_module(f"language_models.{language}WordGenerator")
+        class_ = getattr(module, f"{language}WordGenerator")
+        word_generator = class_(language)
     except Exception as e:
-        print(f"Uh-oh something went wrong {e}")
+        print(f"Uh-oh something went wrong: {e}")
         print(f"Try selecting a predefined language")
         change_language()
 
 
 def check_language():
-    if not language:
+    if not word_generator or not word_generator.language:
         print('Please define a language')
         change_language()
 

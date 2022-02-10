@@ -1,4 +1,4 @@
 .idea/
-languages/
+language_data/
 *.csv
 *.pyc
